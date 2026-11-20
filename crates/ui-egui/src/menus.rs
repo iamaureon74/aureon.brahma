@@ -105,6 +105,7 @@ pub const UI_COMMANDS: &[(&str, &str, &[&str], Option<&str>)] = &[
     ("help.website", "brahma Website", &["Help"], None),
     ("help.artcraftWebsite", "#houseofasher Website", &["Help"], None),
     ("help.reportIssue", "Report an Issue…", &["Help"], None),
+    ("help.foundersNotes", "founders notes from asher", &["Help"], None),
     ("help.systemInfo", "System Info…", &["Help"], None),
     ("help.about", "About brahma", &["Help"], None),
 ];
@@ -418,6 +419,11 @@ pub(crate) fn invoke_unguarded(app: &mut BrahmaApp, ctx: &egui::Context, id: &st
             Ok(Value::Null)
         }
         "help.about" => Ok(json!({"dialog": app.ui.open_dialog(DialogKind::About, Default::default())})),
+        "help.foundersNotes" => {
+            let mut fields = serde_json::Map::new();
+            fields.insert("tab".into(), json!("founders"));
+            Ok(json!({"dialog": app.ui.open_dialog(DialogKind::About, fields)}))
+        }
         "help.systemInfo" => {
             let mut fields = serde_json::Map::new();
             fields.insert("systemInfo".into(), json!(true));
@@ -774,7 +780,7 @@ pub fn is_enabled(app: &BrahmaApp, id: &str) -> bool {
     match id {
         "window.panel.activate" | "window.panel.layout" => true,
         "window.panel.group" | "window.panel.move" | "window.panel.float" | "window.panel.dock" | "window.panel.close" => !app.session.prefs().workspace_locked,
-        "file.open" | "file.exit" | "file.clearRecent" | "file.removeRecent" | "help.about" | "help.systemInfo" | "edit.search" => true,
+        "file.open" | "file.exit" | "file.clearRecent" | "file.removeRecent" | "help.about" | "help.foundersNotes" | "help.systemInfo" | "edit.search" => true,
         i if i.starts_with("file.openRecent.") => true,
         i if i.starts_with(DOCUMENT_ITEM) => true,
         i if crate::links::url_for(i).is_some() => true,
@@ -1112,7 +1118,7 @@ pub fn menu_items(app: &BrahmaApp) -> Vec<MenuItem> {
         }
     }
     // Help: the link items, a separator, then System Info and About.
-    if let Some(at) = items.iter().position(|i| i.id == "help.systemInfo" || i.id == "help.about") {
+    if let Some(at) = items.iter().position(|i| i.id == "help.foundersNotes" || i.id == "help.systemInfo" || i.id == "help.about") {
         items.insert(
             at,
             MenuItem { id: "---".into(), label: "---".into(), path: vec!["Help".into()], shortcut: None, enabled: false, checked: None, color: None },

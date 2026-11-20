@@ -272,7 +272,7 @@ pub fn show(app: &mut BrahmaApp, ctx: &egui::Context) {
                     let tab = about_tab(&fields);
                     let mut chosen = tab;
                     ui.horizontal(|ui| {
-                        for (key, label) in [("about", tl!("About")), ("contributors", tl!("Contributors")), ("models", tl!("Models"))] {
+                        for (key, label) in [("about", tl!("About")), ("contributors", tl!("Contributors")), ("models", tl!("Models")), ("founders", FOUNDERS_TITLE)] {
                             if crate::widgets::pill_tab(ui, label, tab == key).clicked() {
                                 chosen = key;
                             }
@@ -499,7 +499,7 @@ pub fn show(app: &mut BrahmaApp, ctx: &egui::Context) {
 }
 
 /// The About window's tabs, as stored in its `tab` field.
-pub const ABOUT_TABS: [&str; 3] = ["about", "contributors", "models"];
+pub const ABOUT_TABS: [&str; 4] = ["about", "contributors", "models", "founders"];
 
 /// The About tab to show: the `tab` field when it names one, otherwise "about".
 fn about_tab(fields: &serde_json::Map<String, Value>) -> &'static str {
@@ -507,11 +507,30 @@ fn about_tab(fields: &serde_json::Map<String, Value>) -> &'static str {
     ABOUT_TABS.iter().copied().find(|t| *t == want).unwrap_or("about")
 }
 
+/// The founder's note, in his own words: shown as written, in every interface language.
+pub const FOUNDERS_TITLE: &str = "founders notes from asher";
+pub const FOUNDERS_NOTE: &str = "for there are over 21M orphans alive today, for many people whom have kids, if you could adopt 1 orphan off the street, raise them correctly and provide and love them as your own son or daughter, for they had a rough life and they did not ask to become an orphan, for there is a diffrence between mom and mother, and dad and father, and child and son or daughter";
+
+/// The "founders notes from asher" tab: the note as a quote under a short gold rule.
+fn founders_notes(ui: &mut egui::Ui) {
+    let t = crate::theme::Tokens::get(ui.ctx());
+    ui.add_space(4.0);
+    ui.label(egui::RichText::new(FOUNDERS_TITLE).font(crate::theme::semibold(15.0)).color(t.text));
+    ui.add_space(6.0);
+    let (rule, _) = ui.allocate_exact_size(egui::vec2(36.0, 2.0), egui::Sense::hover());
+    ui.painter().line_segment([rule.left_center(), rule.right_center()], egui::Stroke::new(1.5, t.accent.gamma_multiply(0.85)));
+    ui.add_space(10.0);
+    ui.add(egui::Label::new(egui::RichText::new(format!("\u{201c}{FOUNDERS_NOTE}\u{201d}")).size(14.0).color(t.text_dim)).wrap().selectable(true));
+    ui.add_space(8.0);
+    ui.label(egui::RichText::new("— asher").color(t.text_faint));
+}
+
 /// One About tab's contents: the credits lists, or the product blurb and links.
 fn about_tab_body(app: &mut BrahmaApp, ui: &mut egui::Ui, tab: &str) {
     match tab {
         "contributors" => crate::credits::contributors_ui(app, ui),
         "models" => crate::credits::models_ui(ui),
+        "founders" => founders_notes(ui),
         _ => {
             ui.label(tl!("brahma — an open-source, native image editor written in Rust."));
             ui.label(crate::i18n::fmt(tl!("Version {version}"), &[("version", &brahma_engine::build_info::long_version())]));
@@ -1024,5 +1043,32 @@ mod preference_resize_tests {
         assert!(!resizable_dialog(shortcuts.as_object().unwrap()));
         assert!(!resizable_dialog(ordinary.as_object().unwrap()));
         assert!(resizable_dialog(web.as_object().unwrap()));
+    }
+}
+
+#[cfg(test)]
+mod founders_notes_tests {
+    use super::*;
+    use egui_kittest::{Harness, kittest::Queryable};
+
+    #[test]
+    fn help_opens_the_founders_notes_tab_with_the_note_as_written() {
+        assert!(FOUNDERS_NOTE.starts_with("for there are over 21M orphans alive today"));
+        assert!(FOUNDERS_NOTE.ends_with("and child and son or daughter"));
+        let app = BrahmaApp::new(brahma_engine::Session::new(), Default::default());
+        let mut h = Harness::builder().with_size(egui::vec2(900.0, 700.0)).build_ui_state(
+            |ui, app: &mut BrahmaApp| {
+                egui::CentralPanel::default().show(ui, |_| {});
+                show(app, ui.ctx());
+            },
+            app,
+        );
+        BrahmaApp::setup_context(&h.ctx, Default::default());
+        h.run_steps(1);
+        let ctx = h.ctx.clone();
+        crate::menus::invoke(h.state_mut(), &ctx, "help.foundersNotes", json!({})).unwrap();
+        h.run_steps(3);
+        assert!(h.query_all_by_label(FOUNDERS_TITLE).count() >= 2, "the tab and its heading are there");
+        assert!(h.query_by_label_contains("21M orphans").is_some(), "the note is shown");
     }
 }

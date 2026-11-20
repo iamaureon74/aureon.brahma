@@ -415,6 +415,14 @@ new contributors and ai agents: start with [`AGENTS.md`](AGENTS.md), then [`docs
 
 the [brahma documentation book](book/) covers development, architecture, automation, formats and security.
 
+## founders notes from asher
+
+> "for there are over 21M orphans alive today, for many people whom have kids, if you could adopt 1 orphan off the street, raise them correctly and provide and love them as your own son or daughter, for they had a rough life and they did not ask to become an orphan, for there is a diffrence between mom and mother, and dad and father, and child and son or daughter"
+>
+> — asher
+
+<sub>also in the app: help › founders notes from asher.</sub>
+
 ## #houseofasher
 
 brahma is made by #houseofasher: free, open-source creative tools, each written from scratch in rust, native on macos, windows and linux, in the browser through webassembly, and fully drivable by agents.
