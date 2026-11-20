@@ -1,0 +1,134 @@
+# handoff: where the work stands
+
+this file is the memory between sessions. a fresh session (or a new tab) reads it first, then
+`AGENTS.md`. keep it current: update the task table and the "in flight" section on every push.
+
+branch: `claude/compassionate-gates-3ec6rv` on github.com/shep95/brahma (the repo's only branch,
+so also its default). every push goes there.
+
+## live site
+
+- vercel project `brahma-web` in team houseofasher (id `prj_wwHVxBBu5cStwerqT2oTBPOADCDl`).
+- production: https://brahma-web.vercel.app (also brahma-web-houseofasher.vercel.app).
+- the project was created through the api, not the github import, so pushes may not deploy
+  by themselves. to deploy: vercel mcp `create_deployment` with `project: "brahma-web"`,
+  `target: "production"`, `gitSource {type github, org shep95, repo brahma, ref <branch>, sha}`,
+  and **no `teamId` argument** (passing one returns 403 through this connection).
+- `get_deployment` works without `teamId` too; the build-log endpoint returns 404 through this
+  connection, so failures are diagnosed from `errorCode`/`errorMessage` plus local repros.
+- build: `packaging/web/vercel-build.sh` (installs rust >= rust-version, the static musl trunk,
+  thin lto, 2 jobs). about 7 to 10 minutes. headers and csp live in `vercel.json`.
+- vercel authentication is off on the project (public site).
+- last production deploy: f6b70fd (2026-10-25), with every item of the 15-point list, the owner's share image and icon.
+
+## tasks
+
+| # | task | state |
+|---|---|---|
+| 1 | rename photocraft to brahma everywhere | done |
+| 2 | rebrand third parties to #houseofasher | done |
+| 3 | lower-case all user-facing text | done (switch in `i18n::set_lowercase`) |
+| 4 | reword "sin-pattern" phrases | done |
+| 5 | bring-your-own ai api keys (preferences › ai integrations) | done |
+| 7 | app icon from the user's picture | done with the real picture: inline uploads are not written to disk, but their bytes are in the session transcript (`/root/.claude/projects/<session>.jsonl`, base64 `image` parts); extracted with a regex and passed to `packaging/icon-from-image.py`; pwa icons resized from the 1024 master (maskable: square picture on its edge colour with the safe-zone margin) |
+| 8 | warm near-black theme (#141310, gold accent) as default | done |
+| 9 | remove third-party links | done |
+| 10 | full test suite green | done (one pre-existing failure, `smart_object_curves_preview_keeps_its_size_on_a_reduced_proxy`, also fails upstream) |
+| 11 | visual review | done |
+| 12 | security audit + weekly workflow | done (`.github/workflows/security.yml`) |
+| 13 | vercel layout: one static site, no services, no bindings | done, confirmed by the user |
+| 14 | web ui bugs: sidebar clicks, panel scrolling, slow open, responsiveness | done: compact drawer, scrolling columns, image paste on the web (window-level paste listener + `clipboard_get_image`), download progress on the loading screen. open: worker decode on open (1.7 s for 12 mp on the ui thread); the wasm is 26.6 mb (thin lto on vercel; fat lto would be smaller but needs more build ram) |
+| 15 | aesthetic recommender trained on the research file | done: crate `brahma-aesthetic` (l2), commands `aesthetic.recommend/analyze/search`, window › aesthetic advisor |
+| 16 | motion system (springs) matching the aesthetic | done: `ui-egui/src/motion.rs` drives the compact drawer, dock groups sliding shut/open on rail or header clicks (programmatic changes snap), dialogs fading in, button hover easing. open: list staggers, hover on icon buttons |
+| 17 | quality and speed: startup, file open, frame pacing | measured (startup 1.2 s, 12 mp jpeg 1.7 s on the ui thread); worker decode still open |
+| 18 | installable + offline web app (manifest, service worker, document.title) | done (precache on install; offline reload verified) |
+| 19 | this file | ongoing |
+| 20 | export / download with rounded corners | done: `cornerRadius` (px or "20%") on every flat save command, corner radius slider in export as |
+| 21 | ai assistant sidebar: drives every command, persona from the shepherd file, any provider's keys from any country, sees the canvas | done: window › assistant (sparkles button on the rail). engine `ai_chat.rs` (anthropic / openai-compatible / gemini protocols, tools search_commands, run_command, inspect_document, look_at_canvas), 28 provider presets in `ai.rs` (`ai.providers`), persona `crates/aesthetic/data/persona.md`. open: streaming, a transcript saved per document |
+| 24 | adaptive aesthetics: surfaces take the open image's dominant hue, the accent follows a clear hue, the ui font becomes the register's body face (fetched from the catalogue) | done: `ui-egui/src/adaptive.rs`, preference interface › adaptive aesthetics (on by default). github links removed from help and the welcome screen |
+| 25 | top bar: undo / redo / revert, aesthetic advisor and assistant toggles; the advisor reads the open photo itself and lists runnable edits (`brahma_aesthetic::edit_suggestions`, `aesthetic.analyze` › `edits`) | done |
+| 26 | rename a document from its tab (double-click; `document.rename`) | done (`ui-egui/src/tab_rename.rs`) |
+| 27 | (1/15) worker-thread decode on the web | done: `brahma_io::decoded` envelope, `Services::decode_async`, `decode-worker.js` runs a second copy of the wasm; 12 mp jpeg: worst main-thread stall 1.7 s → 0.74 s, open 1.26 s. link preview `apps/brahma-web/share.jpg` is the user's own 1732×908 image (recovered from the transcript the same way; og:image meta 1732×908) |
+| 29 | (3/15) streamed assistant replies + a conversation per document | done: `ai_chat::build_streaming_request` + `StreamParser` (anthropic / openai / gemini sse), `Services::http_stream` (web fetch reader, desktop ureq thread), transcript stashed per document |
+| 28 | (2/15) smaller web download | measured, kept thin lto: fat lto 25.5 mb vs 26.6 mb (4 %) for a 60 % longer build; wasm-opt -Oz already runs; 12.0 mb gzip on the wire (vercel serves brotli). next lever: a codecs/heif feature split |
+| 30 | (4/15) assistant image generation | done: tool `generate_image` (`engine/src/ai_image.rs`): openai-compatible `/images/generations` (gpt-image-1 default, dall-e asks for b64) or gemini image models; the picture lands as a new layer named after the prompt (or a new document). image model row in the assistant setup, pref `integrations.aiImageModel`. anthropic-protocol providers get a clear "no image model" answer |
+| 31 | (5/15) browser auto-save and recovery | done: `apps/brahma-web/src/recovery.rs` (indexeddb `brahma.recovery`, one record per unsaved document as .pcraft bytes) behind the shell's existing autosave/recover services; flushed 5 s after edits pause (`IdleFlush`) plus the interval. fixed `gpu_canvas::now_ms` (was always 0 on wasm, which silently disabled the web autosave timer). verified in headless chromium: paste, edit, wait, reload → "recovered pasted image" with both layers |
+| 32 | (6/15) one-click looks with before/after | done: `crates/aesthetic/src/looks.rs` (8 looks: calm, warm, trust, urgent, wonder, matte, mono, sepia; each a stack of adjustment layers with the principle behind it; ranked per picture by `look_suggestions`), commands `aesthetic.looks` / `aesthetic.look` (one group `look: <id>`, one history step, re-applying replaces) / `aesthetic.toggleLook` (before/after) / `aesthetic.removeLook`; the advisor window shows a Looks row with Before/After and Remove |
+| 33 | (7/15) smart subject / sky / background selection | select.subject, select.sky, select.object, select.focusArea and layer.removeBackground already existed (classical: saliency + grabcut, sky prior). added `select.background` (subject, inverted) and `edit.removeObject {point|rect}` (object selection + expand + content-aware fill + deselect) in `engine/src/quick_action_cmds.rs`; the persona names them |
+| 34 | (8/15) content-aware fill and healing | already in: edit.contentAwareFill (dialog + workspace), edit.deleteAndFillSelection, paint.spotHealing, paint.healingBrush, paint.remove, paint.contentAwareMove. the one-click `edit.removeObject` above is the new piece |
+| 35 | (9/15) variable-font axes, text on a path, warped text in the ui | axis sliders (TYPE-218-4) and warp text (dialog + live preview) were already in; type on a path had commands only. added: a click on the work path with the type tool starts type on it from the click (`type_tool.rs` `nearest_on_work_path` / `path_under`, 6 screen px tolerance). verified in an offscreen snapshot. still open: caret and selection following the curve, psd path text |
+| 36 | (10/15) mobile layout pass | reviewed at 390×844 and 844×390 (snapshot example). fixes: a menu bar narrower than its titles folds into one ☰ button whose menu holds the top menus as submenus (`menus.rs` `compact_menu_bar`, measured from the last full layout); the toolbar goes to two columns by itself when the window is shorter than 620 pt. already fine: options bar scrolls sideways, dock becomes a drawer under 760 pt, canvas fits. open: touch gestures (pinch zoom, two-finger pan) are egui's defaults; a bottom tab bar for the dock panels on phones |
+| 37 | (11/15) collaboration: shared document sessions | evaluated, not built: real-time sharing needs a relay or signalling service, and the site is a static vercel deployment by decision (task 13: no services, no bindings). what exists that makes it tractable later: every edit is a command with a journal (`Session::journal`), `.pcraft` round-trips the whole document, and the control protocol already drives a session from outside. a design that fits: op-based sync by replaying journaled commands through a websocket room (any small relay: a vercel function is out by the same decision, so a user-run relay or webrtc with a signalling page), document ids kept stable, conflicts resolved last-writer-wins per layer with the history snapshotting the other side's steps. first step when a relay is allowed: `session.exportJournal` / `session.replayJournal` commands and a tested merge of two journals |
+| 38 | (12/15) plug-in gallery and template | done: filter › plug-ins › gallery… (`plugin_gallery.rs`): three bundled samples (invert, posterize with a parameter, vignette using the band's canvas position; sources `examples/plugins/*-rs`, built by `examples/plugins/build-all.sh` into `assets/plugins/`), one-click install on desktop and web, install from an https url through `Services::fetch_url`, a "write your own" note. the template was already `examples/plugins/invert-rs` |
+| 39 | (13/15) visual actions editor | the actions panel already had record/play, drag reorder, check and dialog columns, rename, colour, insert stop / menu item / conditional, load/save .atn. added the missing piece: double-click a step → step editor window (command id with its params doc, parameters as json, apply/cancel) through the new `actions.setStep {action, step, id?, params?}` command (keeps position, check and dialog flag) |
+| 40 | (14/15) web colour management | soft proof (view.proofSetup.*, view.proofColors) and the document→monitor display transform already ran on the web; "auto" fell back to srgb with a "platform doesn't report display profiles" notice. the web shell now reports its display as an srgb display with the real srgb profile bytes (`web.rs` `browser_display`, named by the screen's `color-gamut`), so auto resolves as found, srgb documents stay an identity, others are managed into srgb, and color settings says the browser maps the canvas to the screen. wide-gamut canvas output is not possible in wgpu's browser canvas today |
+| 41 | (15/15) local performance log | done: window › performance (`perf_log.rs`): one sample a second (fps, ui ms, worst ui frame, composite, upload, gpu path, documents, megapixels) for an hour, every command over 16 ms, sparklines, export… as json through the save dialog (download on the web), clear. nothing leaves the device unless exported |
+| 42 | shepherd — perceptual publishing studio (the user's full spec: Studio tab with Document / Presentation / Motion, canonical scene graph, tokens, background match, preflight, variants, motion). spec saved at `plan/studio-spec.md` (local); five dependency-ordered releases | tracked, not started |
+| 23 | every font: the full google fonts catalogue on demand + system fonts | done: 1,929 families from the pinned commit (`crates/text/data/google_fonts.tsv`), fetched on first use on web (service-worker cached) and desktop (disk cache); system fonts were already loaded on the desktop. open: a category filter in the font menu, previews of unfetched families |
+
+## plans for the open tasks
+
+- **21 ai assistant (shipped).** `Services::http` does the post (web: `fetch_post` in
+  `web.rs`; desktop: `http_post` on a thread in `services.rs`). the web build can only reach
+  providers that allow browser calls (anthropic with the direct-browser header, openai, google,
+  openrouter, groq, mistral, deepseek do); others need the desktop build or a proxy base url.
+
+## in flight (task 14 and 18)
+
+reproduced in headless chromium against the local build (`packaging/web` + playwright script
+in the session scratchpad, re-creatable from `docs/development.md`):
+
+- the browser tab title never changed: eframe's web backend ignores `ViewportCommand::Title`.
+  fixed: `WebShell::sync_title` mirrors `panels::window_title` to `document.title`.
+- at short window heights the dock squeezed the layers group under its own header rows
+  (overlapping rows). fixed: `dock::show` scrolls the whole column when the groups' minimum
+  heights don't fit (`DockLayout::min_column_height`); layers' minimum raised to 200.
+- at narrow widths (< 980 pt) the dock (min 250 pt) plus toolbar leave no canvas and the colour
+  panel's hue strip draws over the toolbar. planned: a compact layout where the dock becomes a
+  drawer over the canvas opened from the icon rail (`panels::right_dock`), one group at a time,
+  closing on a click outside; slide animation from the new motion module.
+- pwa: `apps/brahma-web/manifest.webmanifest`, `sw.js` (cache-first for hashed wasm/js,
+  network-first for the page), icons 192/512/maskable, registration inline in `index.html`.
+  vercel headers for `sw.js` and the manifest added.
+- file open speed: not yet measured properly (the title signal was broken). measure with a
+  12 mp jpeg drop; the decode runs on the ui thread in wasm (`open_bytes`, no background jobs).
+
+## research inputs
+
+two files the user uploaded (not committed; ask for them again if needed): `shepherd —
+aesthetic research loop` (3,068 lines: colour systems in oklch, typography, motion grammar,
+gestalt, fechner-weber sizing, perception psychology) and `shepherd — quantum artificial
+intelligence` (23 mb persona document; only the responsiveness, animation and security-posture
+passages are relevant). the recommender (task 15) distils the first into a compact knowledge
+table committed with the crate.
+
+## audit pass (2026-10-26)
+
+a read-only review of the session's code found 15 issues; fixed, with tests:
+
+- security: the assistant's `run_command` refuses `prefs.*`, `plugin.*`, scripts, automate,
+  action load/save/play, open/save-as/place and any command given a path or url param
+  (`ai_chat::assistant_may_run`, checked in both the engine tool and the shell);
+  `prefs.get` returns `"(set)"` instead of an api key.
+- streaming: openai tool-call `index` capped (64, no huge allocation); crlf events parse;
+  the last unterminated event parses in `finish`; `"error": null` is not an error;
+  an invalid utf-8 byte no longer stalls the stream (`take_utf8`); desktop stream has a
+  120 s read timeout; the assistant has a stop button.
+- web: the decode worker's `onerror`/`onmessageerror` fail waiting replies (inline decode
+  takes over) and drop the worker; a paste while a text field has focus does not also drop
+  the clipboard image on the canvas; recovery read failure keeps autosave, each record has its
+  own time budget, total read cap 1 gib.
+- desktop fetch cache keeps only font files (plug-in installs are always fresh).
+- step editor refuses to apply when the step moved or changed under it.
+- analysis, interface tint and the assistant's canvas picture go through
+  `display_color::srgb_thumbnail` (cms) instead of reading working-space pixels as srgb.
+- generated pictures are renamed through `layer.setProps`; remove object keeps the selection
+  when the fill fails; remove look keeps the active layer; toolbar chevron explains itself in
+  short windows; "calm the texture" says it changes the active layer.
+- visual: one primary action on home, wordmark + gold rule + warm glow, deeper dark-theme
+  window shadow with a warm hairline, whole-row tool column, a save receipt card
+  (`notices::saved_card`: name, size, bit depth, format; fades after 3.2 s).
+
+still open: `filter_dialog::tests::smart_object_curves_preview_keeps_its_size_on_a_reduced_proxy`
+fails on the branch before this pass too (not investigated); `adaptive.rs` `font_arrived` keeps a
+second copy of served font bytes; compact menu bar has no alt/f10 keyboard navigation.

@@ -1,0 +1,15 @@
+[package]
+name = "brahma-doc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+brahma-geom = { workspace = true }
+brahma-color = { workspace = true }
+brahma-raster = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

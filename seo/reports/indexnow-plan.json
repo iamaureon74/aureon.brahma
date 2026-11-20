@@ -1,0 +1,16 @@
+{
+  "supported_participants": [
+    "bing",
+    "yandex",
+    "naver",
+    "seznam",
+    "yep",
+    "internetarchive",
+    "amazonbot"
+  ],
+  "hosts_to_notify": "submissions are opt-in; see CLI submit-indexnow",
+  "key": "31c27c88929c5fff2523d6275b4bb9ec",
+  "urlList": [
+    "https://brahma.asherin.com/"
+  ]
+}

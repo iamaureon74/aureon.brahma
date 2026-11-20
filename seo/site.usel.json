@@ -1,0 +1,31 @@
+{
+  "usel": 1,
+  "site_name": "brahma",
+  "base_url": "https://brahma.asherin.com",
+  "default_locale": "en",
+  "market_targets": "all",
+  "engines": [
+    "all"
+  ],
+  "sitemap": true,
+  "robots": {
+    "manage": true,
+    "allow_search": true,
+    "block_ai_training": true,
+    "disallow": []
+  },
+  "pages": [
+    {
+      "id": "home",
+      "public": true,
+      "index": true,
+      "render": false,
+      "locales": {
+        "en": {
+          "path": "/"
+        }
+      }
+    }
+  ],
+  "indexnow_key": "31c27c88929c5fff2523d6275b4bb9ec"
+}

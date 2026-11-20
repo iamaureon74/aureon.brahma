@@ -1,0 +1,11 @@
+[package]
+name = "brahma-ops"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+brahma-doc = { workspace = true }

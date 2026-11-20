@@ -1,0 +1,27 @@
+[package]
+name = "brahma-compose"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+brahma-geom = { workspace = true }
+brahma-color = { workspace = true }
+brahma-raster = { workspace = true }
+brahma-doc = { workspace = true }
+brahma-vector = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rayon = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+criterion = { workspace = true }
+brahma-paint = { workspace = true }
+
+[[bench]]
+name = "compose"
+harness = false
