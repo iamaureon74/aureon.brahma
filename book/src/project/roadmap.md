@@ -1,6 +1,6 @@
 # roadmap
 
-the live product roadmap, milestone definitions, parity measurements, and current focus are maintained in [`docs/roadmap.md`](https://github.com/shep95/brahma/blob/main/docs/roadmap.md). menu coverage is generated into [`docs/parity-checklist.md`](https://github.com/shep95/brahma/blob/main/docs/parity-checklist.md) by `cargo xtask parity`.
+the live product roadmap, milestone definitions, parity measurements, and current focus are maintained in [`docs/roadmap.md`](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/roadmap.md). menu coverage is generated into [`docs/parity-checklist.md`](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/parity-checklist.md) by `cargo xtask parity`.
 
 security hardening is cross-cutting rather than a replacement for those product milestones. the current security sequence is:
 

@@ -7,7 +7,7 @@ the desktop control protocol is newline-delimited JSON over a TCP listener bound
 {"id":1,"method":"ui.inspect","params":{}}
 ```
 
-the current method catalog includes engine execution and discovery, application open/save operations, ui inspection and input, screenshots, and document/control helpers. the authoritative method and parameter tables are maintained in [`docs/control-protocol.md`](https://github.com/shep95/brahma/blob/main/docs/control-protocol.md).
+the current method catalog includes engine execution and discovery, application open/save operations, ui inspection and input, screenshots, and document/control helpers. the authoritative method and parameter tables are maintained in [`docs/control-protocol.md`](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/control-protocol.md).
 
 implementation is split across:
 

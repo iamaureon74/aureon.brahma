@@ -8,7 +8,7 @@ for source builds, continue to [building](building.md). the desktop application,
 - `apps/brahma-cli`: headless CLI, JSON-lines server, and MCP server
 - `apps/brahma-web`: WebAssembly application built with trunk
 
-platform packaging and signing details are maintained in the existing [release documentation](https://github.com/shep95/brahma/blob/main/docs/releasing.md). signing is conditional on the configured release secrets; the existence of an artifact alone is not proof that it was signed.
+platform packaging and signing details are maintained in the existing [release documentation](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/releasing.md). signing is conditional on the configured release secrets; the existence of an artifact alone is not proof that it was signed.
 
 ## trusting input files
 

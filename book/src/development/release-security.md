@@ -1,6 +1,6 @@
 # release security
 
-brahma's release workflow builds platform packages and a draft GitHub release from the `release` branch. the authoritative process is [`docs/releasing.md`](https://github.com/shep95/brahma/blob/main/docs/releasing.md).
+brahma's release workflow builds platform packages and a draft GitHub release from the `release` branch. the authoritative process is [`docs/releasing.md`](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/releasing.md).
 
 ## implemented workflow elements
 

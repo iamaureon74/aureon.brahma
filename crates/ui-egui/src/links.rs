@@ -1,15 +1,16 @@
 //! Community and project links: the Help menu, the About dialog, the start screen and the title
-//! bar all open these. URLs follow the #houseofasher pattern (`github.com/shep95/brahma/apps/<app>`,
+//! bar all open these. URLs follow the #houseofasher pattern (`github.com/iamaureon74/aureon.<app>`,
 //! `github.com/storytold/<app>`).
 
 use serde_json::{Value, json};
 
 use crate::BrahmaApp;
 
-pub const DISCORD: &str = "https://github.com/shep95/brahma/discussions";
-pub const ARTCRAFT_WEBSITE: &str = "https://github.com/shep95/brahma";
-pub const APP_PAGE: &str = "https://github.com/shep95/brahma";
-pub const ISSUES: &str = "https://github.com/shep95/brahma/issues";
+pub const DISCORD: &str = "https://discord.gg/YweZ6PZmnx";
+pub const ARTCRAFT_WEBSITE: &str = "https://github.com/iamaureon74/aureon.brahma";
+/// "brahma website" opens the app itself: the live web build.
+pub const APP_PAGE: &str = "https://brahma.asherin.com";
+pub const ISSUES: &str = "https://github.com/iamaureon74/aureon.brahma/issues";
 
 /// Help-menu link commands: (id, url). Labels live in `menus::UI_COMMANDS`.
 pub const COMMANDS: &[(&str, &str)] =
@@ -88,7 +89,7 @@ mod tests {
 
     #[test]
     fn only_web_links_are_opened() {
-        assert!(is_web_url("https://github.com/shep95/brahma"));
+        assert!(is_web_url("https://github.com/iamaureon74/aureon.brahma"));
         assert!(is_web_url("http://localhost:8765/"));
         for bad in ["file:///etc/passwd", "javascript:alert(1)", "ms-msdt:/id", "https://", "", "github.com/x"] {
             assert!(!is_web_url(bad), "{bad}");
@@ -135,7 +136,7 @@ mod tests {
     fn link_commands_open_their_urls() {
         let mut app = BrahmaApp::new(brahma_engine::Session::new(), Default::default());
         let ctx = egui::Context::default();
-        for (id, url) in [("help.discord", "https://github.com/shep95/brahma/discussions"), ("help.website", "https://github.com/shep95/brahma")] {
+        for (id, url) in [("help.discord", "https://discord.gg/YweZ6PZmnx"), ("help.website", "https://brahma.asherin.com")] {
             let r = crate::menus::invoke(&mut app, &ctx, id, serde_json::json!({})).unwrap();
             assert_eq!(r["url"], url);
             assert_eq!(app.ui.status, format!("Opened {url}"));

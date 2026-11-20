@@ -1,6 +1,6 @@
 # contributing
 
-read [`AGENTS.md`](https://github.com/shep95/brahma/blob/main/AGENTS.md) and the existing [contribution guide](https://github.com/shep95/brahma/blob/main/docs/contributing.md) before editing source. those files define the clean-room policy, crate layering, command checklist, testing requirements, naming, and visual verification rules.
+read [`AGENTS.md`](https://github.com/iamaureon74/aureon.brahma/blob/main/AGENTS.md) and the existing [contribution guide](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/contributing.md) before editing source. those files define the clean-room policy, crate layering, command checklist, testing requirements, naming, and visual verification rules.
 
 important repository invariants include:
 

@@ -35,9 +35,9 @@
          .exe need an .exe icon identifier (ICE50), even when the source is an ICO. -->
     <Icon Id="BrahmaIcon.exe" SourceFile="$(var.IconPath)" />
     <Property Id="ARPPRODUCTICON" Value="BrahmaIcon.exe" />
-    <Property Id="ARPURLINFOABOUT" Value="https://github.com/shep95/brahma" />
-    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/shep95/brahma" />
-    <Property Id="ARPHELPLINK" Value="https://github.com/shep95/brahma/discussions" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/iamaureon74/aureon.brahma" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://github.com/iamaureon74/aureon.brahma" />
+    <Property Id="ARPHELPLINK" Value="https://discord.gg/YweZ6PZmnx" />
 
     <StandardDirectory Id="ProgramFiles6432Folder">
       <Directory Id="INSTALLFOLDER" Name="brahma" />

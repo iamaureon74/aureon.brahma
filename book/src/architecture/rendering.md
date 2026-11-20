@@ -18,6 +18,6 @@ cargo run -p brahma-ui-egui --example snapshot
 cargo test -p brahma-gpu
 ```
 
-performance-sensitive work should avoid full-surface work per frame, operate per tile, skip empty tiles, and cache by revision. the current commands and benchmark entry points are listed in [`docs/development.md`](https://github.com/shep95/brahma/blob/main/docs/development.md).
+performance-sensitive work should avoid full-surface work per frame, operate per tile, skip empty tiles, and cache by revision. the current commands and benchmark entry points are listed in [`docs/development.md`](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/development.md).
 
 GPU processing is not a security sandbox. dimensions, decoded buffers, shaders, and command parameters must be validated before resource creation or dispatch.

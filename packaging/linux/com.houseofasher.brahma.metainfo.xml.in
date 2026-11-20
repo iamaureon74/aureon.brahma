@@ -26,10 +26,10 @@
   <launchable type="desktop-id">com.houseofasher.brahma.desktop</launchable>
   <icon type="stock">com.houseofasher.brahma</icon>
   <!-- Only url types known to appstream 0.15 (Ubuntu 22.04, where CI validates): no vcs-browser. -->
-  <url type="homepage">https://github.com/shep95/brahma</url>
-  <url type="bugtracker">https://github.com/shep95/brahma/issues</url>
-  <url type="help">https://github.com/shep95/brahma</url>
-  <url type="contact">https://github.com/shep95/brahma/discussions</url>
+  <url type="homepage">https://github.com/iamaureon74/aureon.brahma</url>
+  <url type="bugtracker">https://github.com/iamaureon74/aureon.brahma/issues</url>
+  <url type="help">https://github.com/iamaureon74/aureon.brahma</url>
+  <url type="contact">https://discord.gg/YweZ6PZmnx</url>
   <categories>
     <category>Graphics</category>
     <category>RasterGraphics</category>

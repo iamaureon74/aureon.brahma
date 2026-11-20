@@ -26,7 +26,7 @@ cargo test -p brahma-engine
 cargo test -p brahma-engine --test panic_hunt -- --ignored
 ```
 
-the exact command-creation checklist is maintained in the existing [contribution guide](https://github.com/shep95/brahma/blob/main/docs/contributing.md).
+the exact command-creation checklist is maintained in the existing [contribution guide](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/contributing.md).
 
 ## security boundary note
 

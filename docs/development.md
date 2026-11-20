@@ -29,7 +29,7 @@ reinstalling rust does not establish that the blocked executable is trusted. see
 smart app control FAQ
 for the available controls; there is no per-app exception. on a managed device, ask your
 administrator about an approved development environment. if you only want to run brahma,
-use the [packaged windows release](https://github.com/shep95/brahma/releases) to avoid
+use the [packaged windows release](https://github.com/iamaureon74/aureon.brahma/releases) to avoid
 building locally; the downloaded app is still subject to windows application-control checks.
 
 ## build and run

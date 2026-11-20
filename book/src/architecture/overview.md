@@ -18,7 +18,7 @@ desktop UI       CLI       JSON control       MCP
 
 the enforced dependency direction runs from format-independent foundation crates through the document and operation layers to composition, i/o, the engine, and finally ui/automation. `cargo xtask layers` checks this rule.
 
-the complete design narrative and dependency diagram remain in [`docs/architecture.md`](https://github.com/shep95/brahma/blob/main/docs/architecture.md). that document contains historical design material as well as implemented architecture; confirm behavior in current source when security or compatibility depends on it.
+the complete design narrative and dependency diagram remain in [`docs/architecture.md`](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/architecture.md). that document contains historical design material as well as implemented architecture; confirm behavior in current source when security or compatibility depends on it.
 
 ## core properties
 

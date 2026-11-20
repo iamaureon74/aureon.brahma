@@ -11,6 +11,12 @@
 | `brahma-transform.jpg` | Brahma UI screenshot (offscreen snapshot) with *The Tetons and the Snake River*, Ansel Adams, 1942 (U.S. National Archives) | Artwork: public domain, Wikimedia Commons. UI: this project. |
 | `brahma-type.jpg` | Brahma UI screenshot (offscreen snapshot) with *Among the Sierra Nevada, California*, Albert Bierstadt, 1868 | Artwork: public domain, Wikimedia Commons. UI: this project. |
 | `brahma-export-light.jpg` | Brahma UI screenshot (offscreen snapshot) with *The Kiss*, Gustav Klimt, 1907–1908 | Artwork: public domain, Wikimedia Commons. UI: this project. |
+| `brahma-home.jpg` | brahma web app home screen (chromium, the production web build) | UI: this project. |
+| `brahma-phone.jpg` | brahma web app home screen at phone width (390 px) | UI: this project. |
+| `brahma-phone-canvas.jpg` | brahma workspace at phone width (offscreen snapshot) on a document made in the app | UI and content: this project. |
+| `brahma-assistant.jpg` | brahma assistant panel (offscreen snapshot) beside a document made in the app | UI and content: this project. |
+| `brahma-advisor.jpg` | brahma aesthetic advisor (offscreen snapshot) reading a document made in the app | UI and content: this project. |
+| `brahma-loading.jpg` | brahma web loading screen (chromium) | UI: this project. |
 
 Screenshots must use famous public-domain artwork (or content made in the app), never personal photos.
 

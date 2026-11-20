@@ -22,4 +22,4 @@ workspace applications are:
 | brahma CLI | `apps/brahma-cli` | convert, inspect, run, batch, JSON-lines serve, and MCP |
 | brahma web | `apps/brahma-web` | the ui and engine compiled for WebAssembly |
 
-new crates must be registered in `xtask/src/layers.rs`. nothing below `ui-egui` may depend on egui, eframe, winit, or rfd. the `psd`, `codecs`, and `cms` crates have additional independence requirements documented in [`AGENTS.md`](https://github.com/shep95/brahma/blob/main/AGENTS.md).
+new crates must be registered in `xtask/src/layers.rs`. nothing below `ui-egui` may depend on egui, eframe, winit, or rfd. the `psd`, `codecs`, and `cms` crates have additional independence requirements documented in [`AGENTS.md`](https://github.com/iamaureon74/aureon.brahma/blob/main/AGENTS.md).

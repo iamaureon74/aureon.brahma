@@ -16,8 +16,8 @@ the repository's existing `docs/` directory remains authoritative for detailed d
 
 coding agents should read the following in order:
 
-1. [`AGENTS.md`](https://github.com/shep95/brahma/blob/main/AGENTS.md) for repository rules and verification gates.
-2. [`README.md`](https://github.com/shep95/brahma/blob/main/README.md) for product scope and current entry points.
+1. [`AGENTS.md`](https://github.com/iamaureon74/aureon.brahma/blob/main/AGENTS.md) for repository rules and verification gates.
+2. [`README.md`](https://github.com/iamaureon74/aureon.brahma/blob/main/README.md) for product scope and current entry points.
 3. [`book/src/architecture/`](architecture/overview.md) for crate boundaries and command flow.
 4. [`book/src/automation/`](automation/overview.md) before driving the CLI, control protocol, or MCP server.
 5. [`book/src/security/`](security/overview.md) before changing a parser, file i/o, automation, MCP, the control server, command execution, or serialization/deserialization.

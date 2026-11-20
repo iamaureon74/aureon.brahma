@@ -3,7 +3,7 @@
 brahma uses the rust workspace at the repository root. install the stable rust toolchain, clone the repository, and run commands from that root.
 
 on linux, install the windowing, gl and GTK development packages first. the development guide's
-[prerequisites](https://github.com/shep95/brahma/blob/main/docs/development.md#prerequisites)
+[prerequisites](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/development.md#prerequisites)
 list them for debian/ubuntu, fedora, arch and opensuse.
 
 ```sh
@@ -22,7 +22,7 @@ cargo xtask layers
 cargo xtask wasm
 ```
 
-`cargo xtask wasm` requires the `wasm32-unknown-unknown` target. ui work should also be checked using the offscreen snapshot example described in the [development guide](https://github.com/shep95/brahma/blob/main/docs/development.md).
+`cargo xtask wasm` requires the `wasm32-unknown-unknown` target. ui work should also be checked using the offscreen snapshot example described in the [development guide](https://github.com/iamaureon74/aureon.brahma/blob/main/docs/development.md).
 
 ## build the documentation
 

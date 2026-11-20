@@ -55,7 +55,7 @@ if (-not $haveCert -and -not $haveAzure) {
 }
 
 $script:SignTool = Find-SignTool
-$common = @('sign', '/v', '/fd', 'SHA256', '/td', 'SHA256', '/d', 'brahma', '/du', 'https://github.com/shep95/brahma')
+$common = @('sign', '/v', '/fd', 'SHA256', '/td', 'SHA256', '/d', 'brahma', '/du', 'https://github.com/iamaureon74/aureon.brahma')
 $tmp = Join-Path ([IO.Path]::GetTempPath()) "brahma-sign-$PID"
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 
