@@ -2727,8 +2727,16 @@ fn start_screen(app: &mut BrahmaApp, ui: &mut egui::Ui) {
     let recent: Vec<String> =
         if cfg!(target_arch = "wasm32") || !show_recent { Vec::new() } else { app.ui.recent_files.iter().take(HOME_RECENT).cloned().collect() };
     let recent_h = if recent.is_empty() { 0.0 } else { 34.0 + recent.len() as f32 * HOME_RECENT_ROW };
-    let card = Rect::from_center_size(area.center(), egui::vec2(460.0, 330.0 + recent_h));
-    paint_home_glow(ui, area, card, &t);
+    // The card fits the workspace with a 16 px gutter: on a phone the workspace is narrower
+    // than the 460 px card, and the buttons stack instead of running off the edge.
+    let card_w = home_card_width(area.width());
+    let stacked = card_w < 2.0 * HOME_BUTTON + 12.0;
+    let card = Rect::from_center_size(area.center(), egui::vec2(card_w, 330.0 + recent_h + if stacked { 42.0 } else { 0.0 }));
+    // The entrance plays once per launch: the light comes up, the name rises into place, a
+    // single gold sweep crosses it and the rule draws out from the centre. With animations off
+    // everything is simply there.
+    let intro = home_intro(ui.ctx());
+    paint_home_glow(ui, area, card, &t, intro.glow);
     let new_label = crate::shortcuts::command_label(app, "New document…", "file.new");
     let open_label = crate::shortcuts::command_label(app, "Open…", "file.open");
     ui.scope_builder(egui::UiBuilder::new().max_rect(card), |ui| {
@@ -2739,43 +2747,72 @@ fn start_screen(app: &mut BrahmaApp, ui: &mut egui::Ui) {
                 let title = ui.painter().layout_no_wrap(tl!("brahma").into(), crate::theme::semibold(44.0), t.text);
                 ui.add_space(((card.width() - title.size().x) / 2.0).max(0.0));
                 let (r, _) = ui.allocate_exact_size(title.size(), Sense::hover());
-                ui.painter().galley(r.min, title, t.text);
+                // Painted, not laid out, at its offset: the layout never moves under the pointer.
+                let at = r.min + egui::vec2(0.0, (1.0 - intro.title) * 10.0);
+                ui.painter().galley_with_override_text_color(at, title.clone(), t.text.gamma_multiply(intro.title));
+                if let Some(x) = intro.sweep {
+                    // A narrow band of the accent crossing the letters once, left to right.
+                    let band_w = 46.0;
+                    let cx = r.left() - band_w + x * (r.width() + 2.0 * band_w);
+                    let band = Rect::from_min_max(egui::pos2(cx - band_w / 2.0, r.top()), egui::pos2(cx + band_w / 2.0, r.bottom() + 12.0));
+                    let fade = (1.0 - (2.0 * x - 1.0).abs()).clamp(0.0, 1.0);
+                    ui.painter().with_clip_rect(band).galley_with_override_text_color(at, title, t.accent.gamma_multiply(0.9 * fade));
+                }
             });
             ui.add_space(8.0);
             let (rule, _) = ui.allocate_exact_size(egui::vec2(card.width(), 2.0), Sense::hover());
-            ui.painter().line_segment(
-                [egui::pos2(rule.center().x - 24.0, rule.center().y), egui::pos2(rule.center().x + 24.0, rule.center().y)],
-                egui::Stroke::new(1.5, t.accent.gamma_multiply(0.85)),
-            );
+            let half = 24.0 * intro.rule;
+            if half > 0.5 {
+                ui.painter().line_segment(
+                    [egui::pos2(rule.center().x - half, rule.center().y), egui::pos2(rule.center().x + half, rule.center().y)],
+                    egui::Stroke::new(1.5, t.accent.gamma_multiply(0.85)),
+                );
+            }
             ui.add_space(10.0);
-            ui.label(egui::RichText::new(tl!("Create a new document or open an existing file.")).color(t.text_dim).size(14.0));
+            ui.add(egui::Label::new(egui::RichText::new(tl!("Create a new document or open an existing file.")).color(t.text_dim).size(14.0)).wrap());
             ui.add_space(22.0);
-            ui.horizontal(|ui| {
-                ui.add_space(((card.width() - 2.0 * 190.0 - 12.0) / 2.0).max(0.0));
-                ui.spacing_mut().item_spacing.x = 12.0;
-                if crate::widgets::primary_button(ui, &new_label, 190.0).clicked() {
-                    let fields = app.new_document_fields();
-                    app.ui.open_dialog(crate::state::DialogKind::NewDocument, fields);
-                }
-                if crate::widgets::secondary_button(ui, &open_label, 190.0).clicked() {
-                    let _ = app.open_dialog_file();
-                }
-            });
+            let button_w = HOME_BUTTON.min(card.width());
+            let mut new_doc = false;
+            let mut open = false;
+            if stacked {
+                ui.spacing_mut().item_spacing.y = 10.0;
+                new_doc = crate::widgets::primary_button(ui, &new_label, button_w).clicked();
+                open = crate::widgets::secondary_button(ui, &open_label, button_w).clicked();
+            } else {
+                ui.horizontal(|ui| {
+                    ui.add_space(((card.width() - 2.0 * HOME_BUTTON - 12.0) / 2.0).max(0.0));
+                    ui.spacing_mut().item_spacing.x = 12.0;
+                    new_doc = crate::widgets::primary_button(ui, &new_label, HOME_BUTTON).clicked();
+                    open = crate::widgets::secondary_button(ui, &open_label, HOME_BUTTON).clicked();
+                });
+            }
+            if new_doc {
+                let fields = app.new_document_fields();
+                app.ui.open_dialog(crate::state::DialogKind::NewDocument, fields);
+            }
+            if open {
+                let _ = app.open_dialog_file();
+            }
             ui.add_space(22.0);
-            ui.horizontal(|ui| {
-                let msg = start_screen_drop_hint(app);
-                let g = ui.painter().layout_no_wrap(msg.to_string(), egui::FontId::proportional(12.5), t.text_faint);
-                ui.add_space(((card.width() - g.size().x - 24.0) / 2.0).max(0.0));
-                let (r, _) = ui.allocate_exact_size(egui::vec2(18.0, 18.0), Sense::hover());
-                crate::icons::paint(ui, r, "image", 15.0, t.text_faint);
-                ui.label(egui::RichText::new(msg).color(t.text_faint));
-            });
+            let msg = start_screen_drop_hint(app);
+            let g = ui.painter().layout_no_wrap(msg.to_string(), egui::FontId::proportional(12.5), t.text_faint);
+            if g.size().x + 24.0 <= card.width() {
+                ui.horizontal(|ui| {
+                    ui.add_space(((card.width() - g.size().x - 24.0) / 2.0).max(0.0));
+                    let (r, _) = ui.allocate_exact_size(egui::vec2(18.0, 18.0), Sense::hover());
+                    crate::icons::paint(ui, r, "image", 15.0, t.text_faint);
+                    ui.label(egui::RichText::new(msg).color(t.text_faint));
+                });
+            } else {
+                // Too narrow for one line: the hint wraps, centred, without the icon.
+                ui.add(egui::Label::new(egui::RichText::new(msg).color(t.text_faint)).wrap());
+            }
             if !recent.is_empty() {
                 ui.add_space(22.0);
                 home_recent(app, ui, &recent);
             }
             ui.add_space(26.0);
-            crate::links::discord_button(app, ui, 190.0);
+            crate::links::discord_button(app, ui, button_w);
             ui.add_space(10.0);
             crate::links::link_row(app, ui);
         });
@@ -2785,8 +2822,8 @@ fn start_screen(app: &mut BrahmaApp, ui: &mut egui::Ui) {
 /// A faint warm light behind the Home card: the accent at a few percent, falling off over the
 /// card's width, so the empty workspace reads as a lit room rather than a void. Drawn as
 /// concentric discs (cheap, no texture) and clipped to the workspace.
-fn paint_home_glow(ui: &egui::Ui, area: Rect, card: Rect, t: &crate::theme::Tokens) {
-    if !t.dark() {
+fn paint_home_glow(ui: &egui::Ui, area: Rect, card: Rect, t: &crate::theme::Tokens, strength: f32) {
+    if !t.dark() || strength <= 0.0 {
         return;
     }
     let painter = ui.painter().with_clip_rect(area);
@@ -2795,9 +2832,52 @@ fn paint_home_glow(ui: &egui::Ui, area: Rect, card: Rect, t: &crate::theme::Toke
     // Each disc adds about 0.4 % of the accent; the centre, under all of them, ends near 7 %.
     const RINGS: usize = 18;
     let tint = egui::Color32::from_rgba_unmultiplied(t.accent.r(), t.accent.g(), t.accent.b(), 1);
-    for i in 0..RINGS {
+    // Rising light: the discs come up from the centre outwards as the glow strengthens.
+    let max_r = max_r * (0.55 + 0.45 * strength);
+    let rings = ((RINGS as f32 * strength).round() as usize).clamp(1, RINGS);
+    for i in (RINGS - rings)..RINGS {
         let k = 1.0 - i as f32 / RINGS as f32;
         painter.circle_filled(c, max_r * k, tint);
+    }
+}
+
+/// Width of the Home screen's two main buttons.
+const HOME_BUTTON: f32 = 190.0;
+
+/// The Home card's width in a workspace `available` wide: 460 px, less on a narrow screen.
+fn home_card_width(available: f32) -> f32 {
+    (available - 32.0).clamp(200.0, 460.0)
+}
+
+/// How far along the Home screen's entrance each element is (0 hidden, 1 in place).
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct HomeIntro {
+    glow: f32,
+    title: f32,
+    rule: f32,
+    /// The gold sweep's position across the wordmark while it runs (0..1), `None` otherwise.
+    sweep: Option<f32>,
+}
+
+/// Length of the Home entrance in seconds; it plays once per launch.
+const HOME_INTRO_SECONDS: f32 = 1.1;
+
+fn home_intro(ctx: &egui::Context) -> HomeIntro {
+    let total = crate::motion::time(ctx, HOME_INTRO_SECONDS);
+    let p = ctx.animate_bool_with_time_and_easing(egui::Id::new("brahma-home-intro"), true, total, |t| t);
+    home_intro_at(p)
+}
+
+/// The staged entrance at overall progress `p`: light first, then the name, then the sweep and
+/// the rule, overlapping so it reads as one movement.
+fn home_intro_at(p: f32) -> HomeIntro {
+    let stage = |a: f32, b: f32| ((p - a) / (b - a)).clamp(0.0, 1.0);
+    let sweep = stage(0.42, 0.95);
+    HomeIntro {
+        glow: crate::motion::ease_out(stage(0.0, 0.55)),
+        title: crate::motion::spring(stage(0.12, 0.62)).min(1.0),
+        rule: crate::motion::spring(stage(0.5, 1.0)).min(1.0),
+        sweep: (sweep > 0.0 && sweep < 1.0).then_some(sweep),
     }
 }
 
@@ -6034,6 +6114,9 @@ mod tap_pressure_tests {
 
 #[cfg(test)]
 mod tabs_tests;
+
+#[cfg(test)]
+mod home_intro_tests;
 
 #[cfg(test)]
 mod tests {

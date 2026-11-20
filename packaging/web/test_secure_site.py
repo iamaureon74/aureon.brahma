@@ -58,6 +58,10 @@ class SecurityTests(unittest.TestCase):
         self.assertIn("style-src 'self'", csp)
         self.assertIn("'wasm-unsafe-eval'", scripts)
         self.assertIn("frame-ancestors 'self'", csp)
+        # The Ollama and LM Studio presets talk to a server on this computer over plain http.
+        connect = next(d for d in csp.split(";") if d.strip().startswith("connect-src "))
+        self.assertIn("http://localhost:*", connect)
+        self.assertNotIn("upgrade-insecure-requests", csp)
         self.assertEqual(headers["x-frame-options"], "SAMEORIGIN")
         self.assertIn("includeSubDomains", headers["strict-transport-security"])
         for name in ("cross-origin-opener-policy", "cross-origin-resource-policy"):

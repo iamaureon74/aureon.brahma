@@ -1903,8 +1903,13 @@ mod tests {
         assert_eq!(sm.smart_filters.len(), 1, "the preview adds the Curves smart filter");
         assert_eq!(shown.size, crate::proxy::proxy_document(&doc, k).size);
         // The 16 px square at (16, 16) is a 4 px square at (4, 4) on the proxy, not 16 px at (16, 16).
-        for (x, y) in [(4, 4), (5, 6), (7, 7)] {
+        // The re-render resamples through the placement, so the square's outermost pixels are
+        // softened (alpha 0.86 to 0.95); what matters is where the square is and how big it is.
+        for (x, y) in [(5, 5), (5, 6), (6, 6)] {
             assert!(alpha(&shown, x, y) > 0.99, "({x}, {y}) is inside the reduced square");
+        }
+        for (x, y) in [(4, 4), (7, 7), (4, 7)] {
+            assert!(alpha(&shown, x, y) > 0.5, "({x}, {y}) is on the reduced square's edge");
         }
         for (x, y) in [(2, 2), (9, 9), (12, 12), (15, 15)] {
             assert!(alpha(&shown, x, y) < 0.01, "({x}, {y}) is outside the reduced square");

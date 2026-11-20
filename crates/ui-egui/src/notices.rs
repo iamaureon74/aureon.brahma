@@ -222,12 +222,15 @@ pub fn show_save_card(app: &mut BrahmaApp, ctx: &egui::Context) {
         app.ui.save_card = None;
         return;
     }
-    let alpha = (((SAVE_CARD_SECONDS - age) / SAVE_CARD_FADE).min(1.0) as f32).clamp(0.0, 1.0);
+    let animate = crate::motion::time(ctx, 1.0) > 0.0;
+    // Rises into place on a spring, fades out at the end; static with animations off.
+    let rise = if animate { crate::motion::spring((age as f32 / 0.32).min(1.0)) } else { 1.0 };
+    let alpha = (((SAVE_CARD_SECONDS - age) / SAVE_CARD_FADE).min(1.0) as f32).clamp(0.0, 1.0) * rise.clamp(0.0, 1.0);
     let t = crate::theme::Tokens::get(ctx);
     let (name, detail) = (card.name.clone(), card.detail.clone());
     egui::Area::new(egui::Id::new("brahma-save-card"))
         .order(egui::Order::Foreground)
-        .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -40.0))
+        .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -40.0 + (1.0 - rise) * 16.0))
         .interactable(false)
         .show(ctx, |ui| {
             ui.set_opacity(alpha);

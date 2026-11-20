@@ -55,6 +55,36 @@
        this page, no Rust runs to say so, so the page itself shows what to do after a while. */
     #brahma_stalled { color: #7e7a70; visibility: hidden; animation: brahma-stalled 0s 20s forwards; }
     @keyframes brahma-stalled { to { visibility: visible; } }
+    /* The wait has motion that means something: the light comes up, the name rises, a gold sweep
+       crosses it while the download runs, and the bar shimmers until real progress arrives. */
+    #brahma_halo { position: absolute; left: 50%; top: 50%; width: 760px; height: 760px; margin: -430px 0 0 -380px;
+      border-radius: 50%; background: radial-gradient(closest-side, rgba(201,168,90,0.10) 0%, rgba(201,168,90,0.075) 22%, rgba(201,168,90,0.045) 45%, rgba(201,168,90,0.022) 65%, rgba(201,168,90,0.008) 82%, rgba(201,168,90,0) 100%);
+      opacity: 0; animation: brahma-light 1.2s ease-out 0.05s forwards, brahma-breathe 5.5s ease-in-out 1.3s infinite; }
+    #brahma_mark { margin: 0 0 6px; font: 600 44px/1.1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: -0.01em;
+      color: #ece7dc; background: linear-gradient(100deg, #ece7dc 0%, #ece7dc 40%, #e8c97a 50%, #ece7dc 60%, #ece7dc 100%);
+      background-size: 260% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent; opacity: 0; transform: translateY(10px);
+      animation: brahma-rise 0.7s cubic-bezier(.2,.9,.25,1.08) 0.15s forwards, brahma-sweep 2.8s ease-in-out 0.9s infinite; }
+    #brahma_rule { width: 48px; height: 1.5px; margin: 4px 0 14px; background: #c9a85a; opacity: 0.85; transform: scaleX(0);
+      animation: brahma-draw 0.6s cubic-bezier(.2,.9,.25,1) 0.55s forwards; }
+    #brahma_word { margin: 0 0 4px; color: #7e7a70; font-size: 12px; letter-spacing: 0.14em; text-transform: lowercase; }
+    #brahma_loading > * { position: relative; }
+    #brahma_loading > #brahma_halo { position: absolute; }
+    #brahma_bar::after { content: ""; position: absolute; inset: 0; width: 40%;
+      background: linear-gradient(90deg, rgba(232,201,122,0), rgba(232,201,122,0.35), rgba(232,201,122,0));
+      animation: brahma-shimmer 1.4s ease-in-out infinite; }
+    @keyframes brahma-light { to { opacity: 1; } }
+    @keyframes brahma-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+    @keyframes brahma-rise { to { opacity: 1; transform: none; } }
+    @keyframes brahma-sweep { 0% { background-position: 100% 0; } 60%, 100% { background-position: 0% 0; } }
+    @keyframes brahma-draw { to { transform: scaleX(1); } }
+    @keyframes brahma-shimmer { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+    @media (prefers-reduced-motion: reduce) {
+      #brahma_halo, #brahma_mark, #brahma_rule, #brahma_bar::after { animation: none; }
+      #brahma_halo, #brahma_mark { opacity: 1; transform: none; }
+      #brahma_rule { transform: none; }
+      #brahma_bar::after { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -98,9 +128,12 @@
       addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' }).catch(() => {}); });
     }
   </script>
-  <div id="brahma_loading">
-    <p>loading brahma</p>
-    <div id="brahma_bar"><div id="brahma_bar_fill"></div></div>
+  <div id="brahma_loading" role="status" aria-live="polite">
+    <div id="brahma_halo" aria-hidden="true"></div>
+    <p id="brahma_mark" aria-hidden="true">brahma</p>
+    <div id="brahma_rule" aria-hidden="true"></div>
+    <p id="brahma_word">loading brahma</p>
+    <div id="brahma_bar" aria-hidden="true"><div id="brahma_bar_fill"></div></div>
     <p id="brahma_progress">&nbsp;</p>
     <p id="brahma_stalled">This is taking longer than usual. If brahma doesn't start, its files may have failed to
       download or come from a different version of this page. <a href="">Reload</a> to try again; the browser

@@ -46,7 +46,9 @@ pub fn is_web_url(url: &str) -> bool {
 /// The "Join us in the #houseofasher community" button: outlined, so the screen's one gold
 /// button stays the primary action.
 pub fn discord_button(app: &mut BrahmaApp, ui: &mut egui::Ui, min_width: f32) -> egui::Response {
-    let r = crate::widgets::secondary_button(ui, tl!("Join us in the #houseofasher community"), min_width).on_hover_text(DISCORD);
+    // A phone-width workspace can't fit the long label: the short one says the same.
+    let label = if ui.available_width() < 300.0 { tl!("Join the community") } else { tl!("Join us in the #houseofasher community") };
+    let r = crate::widgets::secondary_button(ui, label, min_width.min(ui.available_width())).on_hover_text(DISCORD);
     if r.clicked() {
         open(app, ui.ctx(), DISCORD);
     }

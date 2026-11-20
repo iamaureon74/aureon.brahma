@@ -132,3 +132,32 @@ a read-only review of the session's code found 15 issues; fixed, with tests:
 still open: `filter_dialog::tests::smart_object_curves_preview_keeps_its_size_on_a_reduced_proxy`
 fails on the branch before this pass too (not investigated); `adaptive.rs` `font_arrived` keeps a
 second copy of served font bytes; compact menu bar has no alt/f10 keyboard navigation.
+
+## aureon.brahma import and shepherd pass (2026-11-20)
+
+the code now lives at iamaureon74/aureon.brahma (`main`, imported from the
+`claude/compassionate-gates-3ec6rv` snapshot; shep95/brahma is not reachable from this account).
+
+- motion: the home screen has a one-time entrance (`canvas::home_intro`: the light comes up, the
+  wordmark rises, one gold sweep crosses it, the rule draws out; off with animations off); the
+  save receipt rises on a spring; the browser loading screen has a css entrance, a gold sweep
+  across the name while the download runs and a shimmer on the bar until real progress arrives
+  (all off under `prefers-reduced-motion`).
+- interface: the home card fits narrow screens (`home_card_width`, 16 px gutter), its buttons
+  stack below 392 px, the drop hint wraps and the community button uses a short label. checked at
+  1440, 768, 390 and 320 px.
+- security: the csp allowed only https for `connect-src`, which blocked the ollama and lm studio
+  presets on `http://localhost`; `http://localhost:*` and `http://127.0.0.1:*` are back and
+  `upgrade-insecure-requests` is gone (it would rewrite those to https). the service worker
+  caches the hashed stylesheet `secure_site.py` writes (an offline start had no styling) and is
+  `brahma-site-v3`. verified in chromium with the vercel headers: no csp violations, app starts
+  online and offline.
+- fixes: the old smart-object curves preview test asked for a hard edge the resampler softens
+  (position and size were right); the plug-in gallery tests raced on the global registry (now
+  serialised); `adaptive::font_arrived` keeps only faces a register can recommend; three
+  dead-code warnings in the wasm build.
+- tests: engine, ui-egui, desktop app and aesthetic all pass (the gpu tests need a vulkan
+  driver: `apt-get install mesa-vulkan-drivers`); clippy clean native and wasm.
+
+still open: vercel still deploys from shep95/brahma; point the project at aureon.brahma to ship
+from here. tags were not imported (the zip had no git history). compact menu keyboard navigation.

@@ -217,6 +217,10 @@ mod tests {
     use egui_kittest::{Harness, kittest::Queryable};
     use std::sync::{Arc, Mutex};
 
+    /// The plug-in registry is process-wide: tests that install and remove the same samples
+    /// take turns, or one removes a plug-in while the other is checking it.
+    static REGISTRY: Mutex<()> = Mutex::new(());
+
     fn harness(fetch: Option<crate::FetchFn>) -> Harness<'static, BrahmaApp> {
         let services = crate::Services { fetch_url: fetch, ..Default::default() };
         let mut app = BrahmaApp::new(brahma_engine::Session::new(), services);
@@ -240,6 +244,7 @@ mod tests {
     /// parameters validated by the host); the installed ones read "Installed".
     #[test]
     fn samples_install_with_one_click_and_run() {
+        let _turn = REGISTRY.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         for s in SAMPLES {
             let _ = brahma_plugins::registry::remove(s.id);
         }
@@ -274,6 +279,7 @@ mod tests {
     /// failed fetch show in the status line without a crash.
     #[test]
     fn a_url_installs_through_the_fetch_service() {
+        let _turn = REGISTRY.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let _ = brahma_plugins::registry::remove("org.brahma.example.invert");
         let asked: Arc<Mutex<Vec<String>>> = Arc::default();
         let seen = asked.clone();

@@ -60,9 +60,19 @@ pub struct State {
 /// Bytes of served fonts the adaptive font may want, handed over by `served_fonts::install`.
 static ARRIVED: Mutex<Vec<(String, Arc<Vec<u8>>)>> = Mutex::new(Vec::new());
 
-/// Called by `served_fonts::install` for every delivered file.
+/// Called by `served_fonts::install` for every delivered file. Only the few faces a register
+/// can recommend are kept: a second copy of every served font (CJK files are tens of MB) would
+/// double their memory for nothing.
 pub fn font_arrived(family: &str, bytes: &[u8]) {
+    if !is_ui_candidate(family) {
+        return;
+    }
     ARRIVED.lock().unwrap_or_else(PoisonError::into_inner).push((family.to_string(), Arc::new(bytes.to_vec())));
+}
+
+/// Could the adaptive UI font ever be `family`?
+fn is_ui_candidate(family: &str) -> bool {
+    Register::ALL.iter().any(|&r| font_for(r) == Some(family))
 }
 
 /// The body face the research recommends for `register` (`None`: the theme's own font).
@@ -226,6 +236,14 @@ mod tests {
     use super::*;
     use egui_kittest::Harness;
     use serde_json::json;
+
+    #[test]
+    fn only_fonts_a_register_can_recommend_are_kept_twice() {
+        let wanted = Register::ALL.iter().find_map(|&r| font_for(r)).expect("some register recommends its own face");
+        assert!(is_ui_candidate(wanted));
+        assert!(!is_ui_candidate("Noto Sans CJK JP"), "a fallback face is never the UI font");
+        assert!(!is_ui_candidate(""));
+    }
 
     fn hue_of(c: Color32) -> Oklch {
         Oklch::from_srgb8([c.r(), c.g(), c.b()])

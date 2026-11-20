@@ -8,8 +8,10 @@
 //
 // After a new deployment the new index.html references new hashed files; the old ones are
 // dropped from the cache on the next activation so the cache holds one version.
-const CACHE = 'brahma-site-v2';
-const IMMUTABLE = /\.(wasm|js|woff2?|ttf|otf|png)$/;
+const CACHE = 'brahma-site-v3';
+// The build moves the page's inline script and style into hashed files (secure_site.py), so
+// .css is immutable too and must be in the offline set, or an offline start loses its styling.
+const IMMUTABLE = /\.(wasm|js|css|woff2?|ttf|otf|png)$/;
 
 // On install, cache the page and everything it references (the hashed js and wasm, the
 // manifest, the icons), so the app starts offline after the very first visit, not the second.
@@ -25,7 +27,7 @@ self.addEventListener('install', (event) => {
       const urls = new Set();
       for (const m of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
         const u = new URL(m[1], self.location);
-        if (u.origin === self.location.origin && /\.(js|wasm|webmanifest|png)$/.test(u.pathname)) urls.add(u.href);
+        if (u.origin === self.location.origin && /\.(js|css|wasm|webmanifest|png)$/.test(u.pathname)) urls.add(u.href);
       }
       await Promise.all([...urls].map(async (u) => {
         try { const r = await fetch(u); if (r.ok) await cache.put(u, r); } catch (e) { /* cached on first use instead */ }
@@ -52,7 +54,7 @@ self.addEventListener('activate', (event) => {
       for (const m of html.matchAll(/(?:href|src)="([^"]+)"/g)) referenced.add(new URL(m[1], self.location).href);
       for (const req of await cache.keys()) {
         const url = new URL(req.url);
-        if (/\.(wasm|js)$/.test(url.pathname) && !referenced.has(req.url)) await cache.delete(req);
+        if (/\.(wasm|js|css)$/.test(url.pathname) && !referenced.has(req.url)) await cache.delete(req);
       }
     } catch (e) {
       // A pruning failure only costs disk space.
