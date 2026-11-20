@@ -2,6 +2,19 @@
 
 brahma processes complex document and image formats and exposes CLI, JSON control, and MCP automation. treat files, paths, metadata, automation requests, and command parameters as potentially malicious.
 
+## how brahma protects you and your work
+
+1. **saves never destroy the old file.** every save, save as and export writes a temporary file next to the target, flushes it to disk and only then renames it into place. a crash, a full disk or a power cut mid-save leaves the previous version intact (`brahma_format::atomic_write`).
+2. **unsaved work is recoverable and private.** autosave keeps a copy of every changed document; after a crash brahma offers to restore it. on the desktop the recovery folder is readable by your account only (mode 0700 on unix); in the browser it lives in the site's own indexeddb, which no other website can read.
+3. **your keys stay yours.** ai keys are stored only on your device: in a preferences file readable by your account only (mode 0600 on unix), or in the browser's storage for brahma's site. they are sent to the provider you picked and nowhere else; `prefs.get`, scripts and the assistant only ever see "(set)".
+4. **the assistant can't reach your files or settings.** a model reads text you didn't write (layer names, the canvas, replies from a custom endpoint), so it is refused preferences, plug-ins, scripts, open, save, export and any command given a path or url.
+5. **no account, no telemetry.** brahma has no server of its own and sends nothing about you or your documents anywhere. the only network requests are the ones you ask for: an ai provider, a font, a plug-in from an https address.
+6. **hostile files can't crash or take over the app.** every parser treats files as hostile: checked sizes, bounded recursion and capped allocations, fuzzed with adversarial input; a malformed file returns an error, never a crash.
+7. **plug-ins are sandboxed.** plug-ins are webassembly with no file or network access, a memory limit and an instruction budget per call.
+8. **the web app runs under a strict content security policy.** no inline script, subresource integrity on every startup file, hsts, and isolation headers (`vercel.json`).
+9. **downloads are verifiable.** every release file comes with `SHA256SUMS.txt` and a github build-provenance attestation, so you can check it was built from this repository and not changed (`gh attestation verify <file> -R iamaureon74/aureon.brahma`).
+10. **local automation is locked down.** the control channel and mcp bridge listen on loopback only, require a token compared in constant time, and cap request sizes.
+
 ## reporting a vulnerability
 
 please give the repository maintainers a reasonable opportunity to investigate and coordinate a fix before publishing exploitable details, proof-of-concept code, or weaponized files.

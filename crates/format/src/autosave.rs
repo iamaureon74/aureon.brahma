@@ -166,6 +166,9 @@ fn worker(rx: Receiver<Job>, bundle: PathBuf, sidecar: PathBuf, last: Arc<Mutex<
             job = newer;
         }
         let r = (|| {
+            if let Some(dir) = bundle.parent() {
+                ensure_private_dir(dir)?;
+            }
             std::fs::create_dir_all(&bundle)?;
             let stats = writer.save_dir(&job.snapshot, &bundle, &job.opts)?;
             write_atomic(&sidecar, &serde_json::to_vec_pretty(&job.info)?)?;
@@ -178,6 +181,22 @@ fn worker(rx: Receiver<Job>, bundle: PathBuf, sidecar: PathBuf, last: Arc<Mutex<
             *g = Some(r);
         }
     }
+}
+
+/// Create `dir` if needed and make it readable by its owner only (mode 0700 on Unix): it holds
+/// unsaved work, which other accounts on a shared computer must not read. Elsewhere the user's
+/// profile folder already restricts it.
+pub fn ensure_private_dir(dir: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dir)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(dir)?.permissions().mode() & 0o777;
+        if mode != 0o700 {
+            std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700))?;
+        }
+    }
+    Ok(())
 }
 
 /// Recoverable documents in `recovery_dir`, newest first. A sidecar must be named after its own
@@ -405,6 +424,22 @@ fn note(last: &Arc<Mutex<Option<Result<SaveStats>>>>, r: Result<SaveStats>) {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    #[test]
+    fn the_recovery_folder_is_private_to_its_owner() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("pcraft-private-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let doc = Arc::new(Document::new("Mine", brahma_doc::Size { width: 2, height: 2 }, brahma_color::ColorMode::Rgb, brahma_color::SampleType::U8));
+        let saver = Autosaver::new(&dir, "mine");
+        saver.request(doc, 1, None, SaveOptions::default());
+        assert!(saver.flush().is_some_and(|r| r.is_ok()));
+        assert_eq!(std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777, 0o700, "unsaved work is not readable by other accounts");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     use super::*;
 
     #[test]
