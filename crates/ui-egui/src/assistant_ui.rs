@@ -653,8 +653,13 @@ pub fn panel(app: &mut BrahmaApp, ui: &mut egui::Ui) {
                             .size(12.0),
                     );
                 }
-                for line in &app.ui.assistant.lines {
-                    transcript_line(ui, &t, line);
+                for (i, line) in app.ui.assistant.lines.iter().enumerate() {
+                    // Each new line fades in where it lands, so the eye follows the conversation.
+                    let p = crate::motion::enter_progress(ui.ctx(), egui::Id::new(("assistant-line", i, line.text.len())));
+                    ui.scope(|ui| {
+                        ui.set_opacity(p);
+                        transcript_line(ui, &t, line);
+                    });
                 }
                 // The answer as it is being written.
                 if let Some(partial) = app.ui.assistant.parser.as_ref().map(StreamParser::text).filter(|t| !t.trim().is_empty()) {
@@ -662,7 +667,7 @@ pub fn panel(app: &mut BrahmaApp, ui: &mut egui::Ui) {
                 }
                 if app.ui.assistant.busy {
                     ui.horizontal(|ui| {
-                        ui.add(egui::Spinner::new().size(12.0).color(t.accent));
+                        thinking_dots(ui, &t);
                         ui.label(RichText::new(tl!("thinking…")).color(t.text_faint).size(12.0));
                     });
                 }
@@ -783,6 +788,30 @@ fn setup_rows(app: &mut BrahmaApp, ui: &mut egui::Ui, t: &Tokens, save: &mut boo
     });
 }
 
+/// Three gold dots rising and falling in turn while the model works: a sign of life that says
+/// "working", never a fake percentage. Still dots with animations off.
+fn thinking_dots(ui: &mut egui::Ui, t: &Tokens) {
+    let (rect, _) = ui.allocate_exact_size(egui::vec2(30.0, 14.0), egui::Sense::hover());
+    let animate = crate::motion::time(ui.ctx(), 1.0) > 0.0;
+    let now = ui.input(|i| i.time) as f32;
+    for k in 0..3 {
+        let phase = if animate { dot_phase(now, k) } else { 0.5 };
+        let c = egui::pos2(rect.left() + 5.0 + k as f32 * 10.0, rect.center().y + 3.0 - phase * 5.0);
+        ui.painter().circle_filled(c, 2.6, t.accent.gamma_multiply(0.45 + 0.55 * phase));
+    }
+    if animate {
+        ui.ctx().request_repaint_after(std::time::Duration::from_millis(33));
+    }
+}
+
+/// Height of dot `k` at time `now` (0 resting, 1 at the top): one smooth bounce per dot, each a
+/// third of a beat after the one before.
+fn dot_phase(now: f32, k: usize) -> f32 {
+    let beat = 0.9;
+    let x = ((now / beat - k as f32 / 3.0).rem_euclid(1.0)) * std::f32::consts::TAU;
+    (0.5 - 0.5 * x.cos()).powf(1.6)
+}
+
 fn transcript_line(ui: &mut egui::Ui, t: &Tokens, line: &Line) {
     let w = ui.available_width();
     match line.kind {
@@ -818,6 +847,18 @@ fn transcript_line(ui: &mut egui::Ui, t: &Tokens, line: &Line) {
 mod tests {
     use super::*;
     use egui_kittest::{Harness, kittest::Queryable};
+
+    #[test]
+    fn the_thinking_dots_take_turns_and_stay_in_range() {
+        for i in 0..200 {
+            let now = i as f32 * 0.013;
+            let p: Vec<f32> = (0..3).map(|k| dot_phase(now, k)).collect();
+            assert!(p.iter().all(|v| (0.0..=1.0).contains(v)), "{p:?}");
+        }
+        // A third of a beat apart: never all three at the top together.
+        let at = |now: f32| (0..3).map(|k| dot_phase(now, k)).collect::<Vec<_>>();
+        assert!((0..100).all(|i| at(i as f32 * 0.009).iter().filter(|v| **v > 0.95).count() <= 1));
+    }
     use std::collections::VecDeque;
     use std::sync::{Arc, Mutex};
 

@@ -659,6 +659,9 @@ pub(crate) fn panel_window(app: &BrahmaApp, ctx: &egui::Context, id: &str, title
         .max_width(width)
         .frame(float_frame(&t))
         .default_pos(pos2((canvas.right() - width - 16.0 + offset.x).max(canvas.left() + 8.0), canvas.top() + offset.y))
+        // Stay over the canvas: a side panel opened later (the assistant, the dock) never ends
+        // up underneath a floating window.
+        .constrain_to(if canvas.width() >= width + 16.0 && canvas.height() > 120.0 { canvas } else { ctx.content_rect() })
         .show(ctx, |ui| {
             ui.set_width(width);
             ui.set_max_width(width);

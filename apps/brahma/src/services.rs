@@ -714,6 +714,91 @@ fn http_post(req: brahma_engine::ai_chat::HttpRequest, reply: brahma_ui_egui::Ht
 
 #[cfg(test)]
 mod tests {
+    /// The assistant end to end over real HTTP: a local server speaks the OpenAI streaming
+    /// protocol (the shape every openai-compatible and local provider uses), the desktop app's
+    /// own `http_stream` reads it in pieces, and the engine's parser turns it into the reply
+    /// text and a tool call the assistant would run.
+    #[test]
+    fn the_assistant_streams_a_real_reply_and_tool_call_over_http() {
+        use brahma_engine::ai::Protocol;
+        use brahma_engine::ai_chat::{HttpRequest, StreamParser};
+        use brahma_ui_egui::StreamEvent;
+        use std::io::{BufRead, BufReader, Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut sock, _) = listener.accept().unwrap();
+            let mut reader = BufReader::new(sock.try_clone().unwrap());
+            let mut length = 0usize;
+            let mut auth = String::new();
+            loop {
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                let lower = line.to_ascii_lowercase();
+                if let Some(v) = lower.strip_prefix("content-length:") {
+                    length = v.trim().parse().unwrap();
+                }
+                if lower.starts_with("authorization:") {
+                    auth = line.trim().to_string();
+                }
+                if line == "\r\n" {
+                    break;
+                }
+            }
+            let mut body = vec![0u8; length];
+            reader.read_exact(&mut body).unwrap();
+            sock.write_all(b"HTTP/1.1 200 OK\r\ncontent-type: text/event-stream\r\nconnection: close\r\n\r\n").unwrap();
+            let events = [
+                "data: {\"choices\":[{\"delta\":{\"content\":\"added a curves \"}}]}\r\n\r\n",
+                "data: {\"choices\":[{\"delta\":{\"content\":\"layer.\",\"tool_calls\":[{\"index\":0,\"id\":\"c1\",\"function\":{\"name\":\"run_command\",\"arguments\":\"{\\\"id\\\":\\\"layer.newAdjustmentLayer.curves\\\"}\"}}]}}]}\r\n\r\n",
+                "data: {\"choices\":[{\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\r\n\r\ndata: [DONE]\r\n\r\n",
+            ];
+            for e in events {
+                // Split each event mid-way, as a slow network would.
+                let (a, b) = e.as_bytes().split_at(e.len() / 2);
+                sock.write_all(a).unwrap();
+                sock.flush().unwrap();
+                std::thread::sleep(std::time::Duration::from_millis(15));
+                sock.write_all(b).unwrap();
+                sock.flush().unwrap();
+            }
+            (String::from_utf8(body).unwrap(), auth)
+        });
+        let (tx, rx) = std::sync::mpsc::channel();
+        super::http_stream(
+            HttpRequest {
+                url: format!("http://{addr}/v1/chat/completions"),
+                headers: vec![("Authorization".into(), "Bearer test-key".into()), ("Content-Type".into(), "application/json".into())],
+                body: "{\"model\":\"m\",\"stream\":true}".into(),
+            },
+            Box::new(move |e| {
+                let _ = tx.send(e);
+            }),
+        );
+        let mut parser = StreamParser::new(Protocol::OpenAi);
+        let mut status = 0;
+        loop {
+            match rx.recv_timeout(std::time::Duration::from_secs(20)).expect("the stream finishes") {
+                StreamEvent::Status(s) => status = s,
+                StreamEvent::Chunk(c) => {
+                    parser.feed(&c);
+                }
+                StreamEvent::Done => break,
+                StreamEvent::Error(e) => panic!("transport error: {e}"),
+            }
+        }
+        let (body, auth) = server.join().unwrap();
+        assert_eq!(status, 200);
+        assert!(body.contains("\"stream\":true"), "the request body reached the server: {body}");
+        assert_eq!(auth, "Authorization: Bearer test-key", "the key went in the header, to this server only");
+        let reply = parser.finish(status).unwrap();
+        assert_eq!(reply.text, "added a curves layer.");
+        assert_eq!(reply.stop, "tool_calls");
+        assert_eq!(reply.tool_calls.len(), 1);
+        assert_eq!(reply.tool_calls[0].name, "run_command");
+        assert_eq!(reply.tool_calls[0].args["id"], "layer.newAdjustmentLayer.curves");
+    }
+
     #[test]
     fn only_font_files_are_cached() {
         assert!(super::is_font_url("https://raw.example/fonts/Inter.ttf"));
