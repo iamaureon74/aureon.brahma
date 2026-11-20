@@ -25,6 +25,7 @@
 </p>
 
 <p align="center">
+  <a href="#download"><b>download</b></a> ·
   <a href="https://brahma.asherin.com"><b>web app</b></a> ·
   <a href="#previews">previews</a> ·
   <a href="#capabilities">capabilities</a> ·
@@ -43,6 +44,59 @@
 </p>
 
 <br>
+
+## download
+
+one click, then open the file. every file is built by github actions from this repository's code, with a checksum and a signed build record (see [verify your download](#verify-your-download)).
+
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <h3>🪟 windows</h3>
+      <a href="https://github.com/iamaureon74/aureon.brahma/releases/latest/download/brahma-windows-x64-setup.msi"><img alt="download for windows" src="https://img.shields.io/badge/windows%2010%20%2F%2011-installer-c9a85a?style=for-the-badge&logo=windows&logoColor=white&labelColor=141310"></a><br><br>
+      <a href="https://github.com/iamaureon74/aureon.brahma/releases/latest/download/brahma-windows-x64-portable.zip">portable zip (no install)</a><br>
+      <sub>64-bit intel / amd</sub>
+    </td>
+    <td align="center" width="25%">
+      <h3>🐧 linux</h3>
+      <a href="https://github.com/iamaureon74/aureon.brahma/releases/latest/download/brahma-linux-x86_64.AppImage"><img alt="download for linux" src="https://img.shields.io/badge/linux-appimage-c9a85a?style=for-the-badge&logo=linux&logoColor=white&labelColor=141310"></a><br><br>
+      <a href="https://github.com/iamaureon74/aureon.brahma/releases/latest/download/brahma-linux-aarch64.AppImage">arm64 appimage</a> ·
+      <a href="https://github.com/iamaureon74/aureon.brahma/releases/latest/download/brahma-linux-x86_64.tar.gz">x86_64 tar.gz</a> ·
+      <a href="https://github.com/iamaureon74/aureon.brahma/releases/latest/download/brahma-linux-aarch64.tar.gz">arm64 tar.gz</a><br>
+      <sub>any distribution with glibc 2.35+</sub>
+    </td>
+    <td align="center" width="25%">
+      <h3>📱 iphone &amp; ipad</h3>
+      <a href="https://brahma.asherin.com"><img alt="install on iphone and ipad" src="https://img.shields.io/badge/ios-add%20to%20home%20screen-c9a85a?style=for-the-badge&logo=apple&logoColor=white&labelColor=141310"></a><br><br>
+      open in <b>safari</b> → share → <b>add to home screen</b><br>
+      <sub>full screen, works offline</sub>
+    </td>
+    <td align="center" width="25%">
+      <h3>🤖 android</h3>
+      <a href="https://brahma.asherin.com"><img alt="install on android" src="https://img.shields.io/badge/android-install%20app-c9a85a?style=for-the-badge&logo=android&logoColor=white&labelColor=141310"></a><br><br>
+      open in <b>chrome</b> → menu → <b>install app</b><br>
+      <sub>full screen, works offline</sub>
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary><b>first run, step by step</b></summary>
+
+1. **windows installer:** double-click `brahma-windows-x64-setup.msi`. the files are not code-signed yet, so windows smartscreen may show "windows protected your pc": click **more info → run anyway**. brahma then appears in the start menu.
+2. **windows portable:** unzip `brahma-windows-x64-portable.zip` anywhere and run `brahma.exe`. nothing is installed.
+3. **linux appimage:** make it executable and run it: `chmod +x brahma-linux-x86_64.AppImage && ./brahma-linux-x86_64.AppImage`. the first run adds brahma to your app menu.
+4. **linux tar.gz:** unpack it and run `bin/brahma`, or copy the tree into `/usr/local`.
+5. **iphone and ipad:** in safari open [brahma.asherin.com](https://brahma.asherin.com), tap the share button, then **add to home screen**. it opens full screen and works offline after the first visit. apple doesn't allow installing apps from outside the app store, so this web app is the iphone version: the same engine, compiled to webassembly.
+6. **android:** in chrome open [brahma.asherin.com](https://brahma.asherin.com), then menu → **install app** (or **add to home screen**). it opens like any other app and works offline.
+7. **your own server:** unzip `brahma-web.zip` and host the folder on any static server ([hosting notes](packaging/web/README.md)).
+
+</details>
+
+### verify your download
+
+1. download `SHA256SUMS.txt` from the [latest release](https://github.com/iamaureon74/aureon.brahma/releases/latest) and check: `sha256sum -c SHA256SUMS.txt --ignore-missing` (windows: `Get-FileHash brahma-windows-x64-setup.msi`).
+2. or check where the file was built, with the github cli: `gh attestation verify brahma-linux-x86_64.AppImage -R iamaureon74/aureon.brahma`. it proves the file came from this repository's build workflow and was not changed afterwards.
 
 ## at a glance
 
@@ -342,7 +396,7 @@ CRAFT_FONTS_DIR="$PWD/../craft-fonts" cargo run --release -p brahma
 
 **the web build:** `cd apps/brahma-web && trunk build --release`, or self-host it with docker ([docker web hosting](packaging/web/README.md#docker)).
 
-**installers:** the packaging scripts build signed installers for macos (universal dmg), windows (x64, arm64 and x86 msi and portable zips), linux (appimage, flatpak, deb, rpm and tarballs for x86_64 and aarch64, a riscv64 tarball) and freebsd. how releases are built, signed and published is in [`docs/releasing.md`](docs/releasing.md).
+**installers:** ready-made downloads are at the top of this page ([download](#download)). the `Downloads` workflow (`.github/workflows/downloads.yml`, run from the actions tab) builds and publishes them. the packaging scripts can also build signed installers for macos (universal dmg), windows (x64, arm64 and x86 msi and portable zips), linux (appimage, flatpak, deb, rpm and tarballs for x86_64 and aarch64, a riscv64 tarball) and freebsd. how releases are built, signed and published is in [`docs/releasing.md`](docs/releasing.md).
 
 new contributors and ai agents: start with [`AGENTS.md`](AGENTS.md), then [`docs/`](docs/).
 

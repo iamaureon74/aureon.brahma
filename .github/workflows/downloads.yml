@@ -1,0 +1,177 @@
+name: Downloads
+
+# Builds the one-click downloads the README links to and publishes them as a GitHub release.
+# Every file has a fixed name, so https://github.com/<repo>/releases/latest/download/<name>
+# always serves the newest build. Run it from the Actions tab (Run workflow) or by pushing to
+# the `release` branch. No secrets are needed: without signing certificates the Windows files
+# are unsigned (Windows SmartScreen asks once), and every file is covered by SHA256SUMS.txt and
+# a GitHub build-provenance attestation (`gh attestation verify <file> -R <repo>`).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [release]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: downloads
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  windows:
+    name: windows x64
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - name: install wix
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          wix extension add -g WixToolset.UI.wixext/5.0.2 WixToolset.Util.wixext/5.0.2
+      - name: build and package
+        shell: pwsh
+        run: |
+          $env:BRAHMA_BUILD_SHA = "${{ github.sha }}"
+          pwsh packaging/windows/package.ps1 -Arch x64
+      - name: fixed names
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force out | Out-Null
+          Copy-Item (Get-ChildItem dist/release/brahma-*-windows-x64.msi).FullName out/brahma-windows-x64-setup.msi
+          Copy-Item (Get-ChildItem dist/release/brahma-*-windows-x64-portable.zip).FullName out/brahma-windows-x64-portable.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: out/*
+          if-no-files-found: error
+
+  linux:
+    name: linux ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-22.04
+          - arch: aarch64
+            runner: ubuntu-22.04-arm
+    # Ubuntu 22.04 (glibc 2.35), so the binaries also run on newer distributions.
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libxcursor-dev \
+            libgl1-mesa-dev libgtk-3-dev libasound2-dev libfontconfig1-dev libfreetype-dev \
+            desktop-file-utils zsync file
+      - uses: dtolnay/rust-toolchain@stable
+      - name: build and package
+        env:
+          BRAHMA_BUILD_SHA: ${{ github.sha }}
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: bash packaging/linux/package.sh --formats "appimage tar"
+      - name: fixed names
+        run: |
+          mkdir -p out
+          cp dist/release/brahma-*-linux-${{ matrix.arch }}.AppImage out/brahma-linux-${{ matrix.arch }}.AppImage
+          cp dist/release/brahma-*-linux-${{ matrix.arch }}.tar.gz out/brahma-linux-${{ matrix.arch }}.tar.gz
+          chmod +x out/*.AppImage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: out/*
+          if-no-files-found: error
+
+  web:
+    name: web (self-host zip)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: build
+        env:
+          BRAHMA_BUILD_SHA: ${{ github.sha }}
+          CARGO_PROFILE_WASM_RELEASE_LTO: thin
+        run: bash packaging/web/vercel-build.sh
+      - name: package
+        run: |
+          mkdir -p out
+          (cd dist && cp -R web brahma-web && zip -qr9 ../out/brahma-web.zip brahma-web)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: out/*
+          if-no-files-found: error
+
+  publish:
+    name: publish release
+    needs: [windows, linux, web]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: checksums
+        run: |
+          cd artifacts
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: artifacts/*
+      - name: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(awk '/^\[/{p=($0=="[workspace.package]");next} p&&$1=="version"{gsub(/[" ]/,"",$3);print $3;exit}' Cargo.toml)
+          tag="v${version}-build.${GITHUB_RUN_NUMBER}"
+          cat > notes.md <<EOF
+          brahma ${version}, built from ${GITHUB_SHA} by GitHub Actions.
+
+          | device | file |
+          |---|---|
+          | windows 10/11 (installer) | brahma-windows-x64-setup.msi |
+          | windows 10/11 (no install) | brahma-windows-x64-portable.zip |
+          | linux x86_64 | brahma-linux-x86_64.AppImage, brahma-linux-x86_64.tar.gz |
+          | linux arm64 | brahma-linux-aarch64.AppImage, brahma-linux-aarch64.tar.gz |
+          | iphone, ipad, android | install the web app from https://brahma.asherin.com |
+          | your own server | brahma-web.zip |
+
+          verify a download: \`sha256sum -c SHA256SUMS.txt --ignore-missing\`, or
+          \`gh attestation verify <file> -R ${GITHUB_REPOSITORY}\`.
+          the windows files are not code-signed yet, so smartscreen may ask before the first run.
+          EOF
+          sed -i 's/^          //' notes.md
+          gh release create "$tag" artifacts/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "brahma ${version} (build ${GITHUB_RUN_NUMBER})" --notes-file notes.md --latest
