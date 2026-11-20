@@ -641,6 +641,14 @@ mod tests {
         assert!(s.execute("ai.tool", json!({})).is_err());
         let prompt = system_prompt(&s);
         assert!(prompt.contains("shepherd") && prompt.contains("32 x 16"));
+        // Every command id the persona names is a real command, so the model never starts
+        // with a call that can only fail.
+        for id in brahma_aesthetic::PERSONA.split('`').skip(1).step_by(2).filter(|w| w.contains('.') && !w.contains(' ')) {
+            assert!(crate::commands::find(id).is_some(), "the persona names `{id}`, which is not a command");
+        }
+        for tool in ["search_commands", "run_command", "inspect_document", "look_at_canvas"] {
+            assert!(tools().iter().any(|t| t.0 == tool), "the persona names the tool {tool}");
+        }
         assert!(tool_text(&json!({"a": "b"})).contains("\"a\""));
         let long = tool_text(&Value::String("é".repeat(MAX_TOOL_TEXT)));
         assert!(long.contains("[cut:"));
